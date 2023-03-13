@@ -2,6 +2,7 @@ const Genre = require("../models/Genre.js");
 const validate = require("../functions/validate.js");
 
 const typeController = {
+
   create: async (req, res) => {
     const { catalogGenre } = req.body;
 
@@ -65,29 +66,21 @@ const typeController = {
   },
 
   delete: async (req, res) => {
-    const { genreId, catalogGenre } = req.body;
-
-    console.log(catalogGenre);
+    const { genreId} = req.body;
 
     try {
       validate({ genreId, isRequired: true });
-
-      validate({ catalogGenre, type: `findNumero`, isRequired: true });
 
       const findGenre = await Genre.findByPk(genreId);
 
       if (!findGenre)
         throw new Error(`Genero não encontrada ou não cadastrado`);
 
-      const newGenre = await findGenre.update({
-        genre: catalogGenre,
-      });
-
-      console.log(newGenre);
+      const destroyGenre = await findGenre.destroy();
 
       return res
         .status(200)
-        .json(`Genero alterado com sucesso: ${newGenre.genre}`);
+        .json(`Genero deletado com sucesso: ${destroyGenre.genre}`);
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
