@@ -1,12 +1,19 @@
 const Genre = require("../models/Genre.js");
+const User = require("../models/User.js");
 const validate = require("../functions/validate.js");
+const { where } = require("sequelize");
 
 const typeController = {
-
   create: async (req, res) => {
-    const { catalogGenre } = req.body;
+    const { userId: id, role: role, catalogGenre } = req.body;
 
     try {
+      const user = await User.findByPk(id);
+
+      if (!user) throw new Error(`usuario precisa estar logado`);
+      if (role !== "ADM")
+        throw new Error(`Você não tem privilégio para esta área`);
+
       validate({ catalogGenre, type: `findNumero`, isRequired: true });
 
       const findGenre = await Genre.findOne({ where: { genre: catalogGenre } });
@@ -15,6 +22,7 @@ const typeController = {
 
       const genre = await Genre.create({
         genre: catalogGenre,
+        userId: id,
       });
 
       return res.status(200).json(`Genero criado com sucesso: ${genre.genre}`);
@@ -24,14 +32,18 @@ const typeController = {
   },
 
   update: async (req, res) => {
-    const { genreId, catalogGenre } = req.body;
-
-    console.log(catalogGenre);
+    const { user: id, role: role, genreId, catalogGenre } = req.body;
 
     try {
       validate({ genreId, isRequired: true });
-
       validate({ catalogGenre, type: `findNumero`, isRequired: true });
+
+      const user = await User.findByPk(id);
+
+      if (!user) throw new Error(`usuario precisa estar logado`);
+
+      if (role !== "ADM")
+        throw new Error(`Você não tem privilégio para esta área`);
 
       const findGenre = await Genre.findByPk(genreId);
 
@@ -65,11 +77,37 @@ const typeController = {
     }
   },
 
+  getByIdentifier: async (req, res) => {
+    const { userId: id, role: role } = req.body;
+
+    try {
+      if (role !== "ADM")
+        throw new Error(`Você não tem privilégio para esta área`);
+
+      const user = await User.findByPk(id);
+
+      if (!user) throw new Error(`usuario precisa estar logado`);
+
+      const genres = await Genre.findAll({ where: { userId: id } });
+
+      return res.status(200).json(genres);
+    } catch (erro) {
+      return res.status(400).json({ erro: erro.message });
+    }
+  },
+
   delete: async (req, res) => {
-    const { genreId} = req.body;
+    const { genreId, userId: id, role: role } = req.body;
 
     try {
       validate({ genreId, isRequired: true });
+
+      const user = await User.findByPk(id);
+
+      if (!user) throw new Error(`usuario precisa estar logado`);
+
+      if (role !== "ADM")
+        throw new Error(`Você não tem privilégio para esta área`);
 
       const findGenre = await Genre.findByPk(genreId);
 
